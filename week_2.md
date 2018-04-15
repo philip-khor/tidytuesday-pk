@@ -8,7 +8,7 @@ output:
     variant: markdown_github
 ---
 
-
+#  #TidyTuesday Week 2
 
 ```r
 library(tidyverse) 
@@ -52,10 +52,6 @@ ggplot(data = week2shape) +
        caption = 'Source: Spotrac.com', 
        x = 'Year', y = 'Average cap value (US$ million)') + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = 'none') 
-```
-
-```
-## Warning: Removed 56 rows containing missing values (geom_point).
 ```
 
 ![](tidyweek_2_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
