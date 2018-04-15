@@ -1,59 +1,52 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: '#TidyTuesday Week 2'
+output:
+  html_document:
+    df_print: paged
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 ```{r}
 library(tidyverse) 
 library(readxl)
 week2 <- read_excel("C:/Users/Philip/Downloads/tidy_tuesday_week2.xlsx")
-skimr::skim(week2)
 ```
 
 ```{r}
-week2 %>% group_by(year) %>% summarise(CB = mean(Cornerback), 
-                                       DL = mean(`Defensive Lineman`), 
-                                       LB = mean(Linebacker), 
-                                       OL = mean(`Offensive Lineman`), 
-                                       QB = mean(Quarterback, na.rm = TRUE), 
-                                       RB = mean(`Running Back`), 
-                                       SF = mean(Safety), 
-                                       ST = mean(`Special Teamer`), 
-                                       TE = mean(`Tight End`), 
-                                       WR = mean(`Wide Receiver`)) -> week2group
-```
+week2a <- plyr::rename(week2, c('Cornerback' = 'pay.CB', 'Defensive Lineman' = 'pay.DL', 
+                                'Linebacker' = 'pay.LB', 'Offensive Lineman' = 'pay.LN', 
+                                'Quarterback' = 'pay.QB', 'Running Back' = 'pay.RB', 
+                                'Safety' = 'pay.S', 'Special Teamer' = 'pay.ST', 
+                                'Tight End' = 'pay.TE', 'Wide Receiver' = 'pay.WR'))
 
-```{r}
-p1 <- ggplot() + geom_jitter(data = week2, aes(x = year, y = Cornerback/10^6, alpha = Cornerback)) + geom_line(data = week2group, aes(year, CB/10^6, group = 1), color = 'blue', size = 1) + scale_alpha(range = c(0.2, 0.1)) + theme_minimal() + theme(legend.position="none") + ylab(NULL) + xlab(NULL) + geom_text(aes(x = 2012, y = 22),label = 'CB', size = 5) + coord_cartesian(ylim = c(0,25)) + scale_x_continuous(breaks = c(2011, 2014, 2017), labels = c(paste0('\'', 11), paste0('\'', 14),paste0('\'', 17)))
+week2shape <- reshape(data=as.data.frame(week2a), 
+                      varying = c('pay.CB', 'pay.DL', 'pay.LB', 'pay.LN', 'pay.QB', 'pay.RB', 
+                                  'pay.S', 'pay.ST', 'pay.TE', 'pay.WR'), 
+                      direction = 'long')
 
-p2 <- ggplot() + geom_jitter(data = week2, aes(x = year, y = `Defensive Lineman`/10^6, alpha = `Defensive Lineman`))+ geom_line(data = week2group, aes(year, DL/10^6, group = 1), color = 'blue', size = 1) + scale_alpha(range = c(0.2, 0.1)) + theme_minimal() + theme(legend.position="none") + ylab(NULL) + xlab(NULL) + geom_text(aes(x = 2012, y = 22),label = 'DL', size = 5) + coord_cartesian(ylim = c(0,25)) + scale_x_continuous(breaks = c(2011, 2014, 2017), labels = c(paste0('\'', 11), paste0('\'', 14),paste0('\'', 17)))
+week2shape$pay.av <- ave(week2shape$pay, week2shape$time, week2shape$year, 
+                         FUN = function(x) mean(head(sort(x, decreasing = TRUE), 16), na.rm = TRUE))
 
-p3 <- ggplot() + geom_jitter(data = week2, aes(x = year, y = Linebacker/10^6, alpha = Linebacker))+ geom_line(data = week2group, aes(year, LB/10^6, group = 1), color = 'blue', size = 1) + scale_alpha(range = c(0.2, 0.1)) + theme_minimal() + theme(legend.position="none")+ ylab(NULL) + xlab(NULL)+ geom_text(aes(x = 2012, y = 22),label = 'LB', size = 5) + coord_cartesian(ylim = c(0,25)) + scale_x_continuous(breaks = c(2011, 2014, 2017), labels = c(paste0('\'', 11), paste0('\'', 14),paste0('\'', 17)))
+week2shape$offense <- grepl('RB|QB|LN|TE|WR', week2shape$time)*1
 
-p4 <- ggplot() + geom_jitter(data = week2, aes(x = year, y = `Offensive Lineman`/10^6, alpha = `Offensive Lineman`))+ geom_line(data = week2group, aes(year, OL/10^6, group = 1), color = 'blue', size = 1) + scale_alpha(range = c(0.2, 0.1)) + theme_minimal() +  theme(legend.position="none") + ylab(NULL) + xlab(NULL) + geom_text(aes(x = 2012, y = 22),label = 'OL', size = 5) + coord_cartesian(ylim = c(0,25))+ scale_x_continuous(breaks = c(2011, 2014, 2017), labels = c(paste0('\'', 11), paste0('\'', 14),paste0('\'', 17)))
-
-p5 <- ggplot() + geom_jitter(data = week2, aes(x = year, y = Quarterback/10^6, alpha = Quarterback))+ geom_line(data = week2group, aes(year, QB/10^6, group = 1), color = 'blue', size = 1) + scale_alpha(range = c(0.2, 0.1)) + theme_minimal()+ theme(legend.position="none") + ylab(NULL) + xlab(NULL) + geom_text(aes(x = 2012, y = 22),label = 'QB', size = 5) + coord_cartesian(ylim = c(0,25)) + scale_x_continuous(breaks = c(2011, 2014, 2017), labels = c(paste0('\'', 11), paste0('\'', 14),paste0('\'', 17)))
-
-p6 <- ggplot() + geom_jitter(data = week2, aes(x = year, y = `Running Back`/10^6, alpha = `Running Back`))+ geom_line(data = week2group, aes(year, RB/10^6, group = 1), color = 'blue', size = 1) + scale_alpha(range = c(0.2, 0.1)) + theme_minimal() + theme(legend.position="none") + ylab(NULL) + xlab(NULL) + geom_text(aes(x = 2012, y = 22),label = 'RB', size = 5) + coord_cartesian(ylim = c(0,25)) + scale_x_continuous(breaks = c(2011, 2014, 2017), labels = c(paste0('\'', 11), paste0('\'', 14),paste0('\'', 17)))
-
-p7 <- ggplot() + geom_jitter(data = week2, aes(x = year, y = Safety/10^6, alpha = Safety))+ geom_line(data = week2group, aes(year, SF/10^6, group = 1), color = 'blue', size = 1) + scale_alpha(range = c(0.2, 0.1)) + theme_minimal()+ theme(legend.position="none") + ylab(NULL)+ xlab(NULL) + geom_text(aes(x = 2012, y = 22),label = 'SF', size = 5) + coord_cartesian(ylim = c(0,25)) + scale_x_continuous(breaks = c(2011, 2014, 2017), labels = c(paste0('\'', 11), paste0('\'', 14),paste0('\'', 17)))
-
-p8 <- ggplot() + geom_jitter(data = week2, aes(x = year, y = `Special Teamer`/10^6, alpha = `Special Teamer`))+ geom_line(data = week2group, aes(year, ST/10^6, group = 1), color = 'blue', size = 1) + scale_alpha(range = c(0.2, 0.1)) + theme_minimal() + theme(legend.position="none")+ ylab(NULL) + xlab(NULL)+ geom_text(aes(x = 2012, y = 22),label = 'ST', size = 5) + coord_cartesian(ylim = c(0,25)) + scale_x_continuous(breaks = c(2011, 2014, 2017), labels = c(paste0('\'', 11), paste0('\'', 14),paste0('\'', 17)))
-
-p9 <- ggplot() + geom_jitter(data = week2, aes(x = year, y = `Tight End`/10^6, alpha = `Tight End`))+ geom_line(data = week2group, aes(year, TE/10^6, group = 1), color = 'blue', size = 1) + scale_alpha(range = c(0.2, 0.1)) + theme_minimal()+ theme(legend.position="none")+ ylab(NULL)+ xlab(NULL) + geom_text(aes(x = 2012, y = 22),label = 'TE', size = 5) + coord_cartesian(ylim = c(0,25)) + scale_x_continuous(breaks = c(2011, 2014, 2017), labels = c(paste0('\'', 11), paste0('\'', 14),paste0('\'', 17)))
-
-p10 <- ggplot() + geom_jitter(data = week2, aes(x = year, y = `Wide Receiver`/10^6, alpha = `Wide Receiver`))+ geom_line(data = week2group, aes(year, WR/10^6, group = 1), color = 'blue', size = 1) + scale_alpha(range = c(0.2, 0.1)) + theme_minimal() + theme(legend.position="none") + ylab(NULL) + xlab(NULL)+ geom_text(aes(x = 2012, y = 22),label = 'WR', size = 5) + coord_cartesian(ylim = c(0,25)) + scale_x_continuous(breaks = c(2011, 2014, 2017), labels = c(paste0('\'', 11), paste0('\'', 14),paste0('\'', 17)))
-
-library(gridExtra)
-grid1 <- grid.arrange(p6, p5, p4, p9, p7, nrow = 1, top = 'OFFENSE')
-grid2 <- grid.arrange(p1, p2, p3, p8, p10, nrow = 1, top = 'DEFENSE')
-grid.arrange(grid1, grid2, ncol = 1, top = 'Average cap value of 16 highest-paid players in each position')
+week2shape$players <- factor(x = week2shape$time, 
+                             labels  = c('CB' = 'Cornerback', 'DL' = 'Defensive Lineman', 
+                                         'LB' = 'Linebacker', 'LN' = 'Offensive Lineman', 
+                                         'QB' = 'Quarterback', 'RB' = 'Running Back', 
+                                         'S' = 'Safety', 'ST' = 'Special Teamer',
+                                         'TE' = 'Tight End', 'WR' = 'Wide Receiver'))
 ```
 ```{r}
-ml <- arrangeGrob(grid1, grid2, ncol = 1, top = textGrob('Average cap value of 16 highest-paid players in each position', x = 0, y = 0, just = 'left', gp = gpar(fontface = 'bold', fontsize = 15)))
-ggsave('week2.pdf', ml)
+ggplot(data = week2shape) + 
+  geom_jitter(aes(x = year, y= pay/(10^6), alpha = pay), color = '#999999') + 
+  geom_line(aes(x = year, y = pay.av/(10^6)), color = '#ee7600', size = 1.5) + 
+  scale_alpha(range = c(0.2, 0.1)) + facet_wrap(~players,nrow = 2) + 
+  theme_minimal() + 
+  labs(title = 'The average pay for top running backs has stalled',
+       subtitle = 'Average cap value of 16 highest-paid players in each position', 
+       caption = 'Source: Spotrac.com', 
+       x = 'Year', y = 'Average cap value (US$ million)') + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position = 'none') 
+
+ggsave('tidy2.png', height = 5, width = 7)
 ```
