@@ -116,4 +116,4 @@ shinyApp(ui = ui, server = server)
 ```
 
 <!--html_preserve--><div style="width: 100% ; height: 400px ; text-align: center; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;" class="muted well">Shiny applications not supported in static R Markdown documents</div><!--/html_preserve-->
-[Link to Shiny document](https://philipk.shinyapps.io/TidyTuesdayWeek3/)
+[Link to Shiny document](https://philipk.shinyapps.io/Tidy3/)
