@@ -16,26 +16,6 @@ output:
 ```r
 library(readxl)
 library(tidyverse)
-```
-
-```
-## -- Attaching packages ------------------------------------------------------ tidyverse 1.2.1 --
-```
-
-```
-## v ggplot2 2.2.1     v purrr   0.2.4
-## v tibble  1.4.2     v dplyr   0.7.4
-## v tidyr   0.8.0     v stringr 1.3.0
-## v readr   1.1.1     v forcats 0.3.0
-```
-
-```
-## -- Conflicts --------------------------------------------------------- tidyverse_conflicts() --
-## x dplyr::filter() masks stats::filter()
-## x dplyr::lag()    masks stats::lag()
-```
-
-```r
 owid <- read_excel("global_mortality.xlsx")
 
 names(owid) <- str_trim(str_remove_all(names(owid), "[[:punct:]]"))
@@ -84,6 +64,52 @@ ggsave('owid.pdf')
 ## Saving 7 x 5 in image
 ```
 
+
+```r
+library(shiny)
+ui <- fluidPage(
+  titlePanel("Share of deaths by cause"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(inputId = "country", label = "Country:", choices = unique(owid$country), 
+                  selected = "World"),
+      
+      sliderInput(inputId = "year", label = "Year:",
+                  min = min(owid$year), max = max(owid$year),value = min(owid$year), 
+                  animate = TRUE, sep = ""),
+      p("Source: Institute for Health Metrics and Evaluation (IHME); Global Terrorism Database (GTD); Amnesty International")
+    ),
+    mainPanel(
+        plotOutput(outputId = "barplot"),
+        p("Data refers to the specific cause of death, which is distinguished from risk factors for death, such as air pollution, diet and other lifestyle factors. See sources for further details on definitions of specific cause categories.")
+  )
+  )
+)
+
+
+server <- function(input, output) {
+  output$barplot <- renderPlot({
+    ggplot(a[a$country == input$country & a$year == input$year & a$rates > 0,], 
+           aes(x = reorder(disease, rates), y = rates, fill = disease)) + 
+      geom_bar(stat = 'identity') + geom_text(aes(label = paste0(round(rates,1), '%')),
+                                          position = position_dodge(width = .9), 
+                                          hjust = "left", vjust = "center", size = 2.5)+
+  coord_flip() +
+  theme_minimal() + theme(legend.position = 'none', 
+                          plot.title = element_text(hjust = 1), 
+                          plot.subtitle = element_text(hjust = 1), 
+                          axis.title.x=element_blank(), 
+                          axis.title.y=element_blank(), 
+                          panel.grid.major.y = element_blank(), 
+                          panel.grid.minor = element_blank()) + 
+  scale_y_continuous(breaks = c(0,5,10,15,20,25,30), 
+                     labels = c('0%', '5%', '10%', '15%', '20%', '25%', '30%'))
+  }
+  )
+}
+
+shinyApp(ui = ui, server = server)
+```
 
 ```
 ## PhantomJS not found. You can install it with webshot::install_phantomjs(). If it is installed, please make sure the phantomjs executable can be found via the PATH variable.
