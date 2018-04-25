@@ -251,7 +251,7 @@ ggplot(tax2, aes(FactorTopcode, income, color = Gender)) +
 ![](tidyweek4_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 # Gender-occuption combinations don't mean much ... 
-* not unless they're weighted by the number of people with that income. 
+* not unless they're weighted by the number of people in that occupation. 
 * Weighted average of income by occupation class is calculated 
 * Also [weighted average income as percentage of male income](https://twitter.com/a40ruhr/status/988880995079274498?s=20) 
 
@@ -282,12 +282,12 @@ tax3a %>%
   ggplot(aes(x = inc/weights/10e2, y = FactorTopcode, color = Gender)) + 
   geom_point() + 
   theme_minimal() + geom_text(aes(label = paste0(round(prop,1),'%')), 
-                              nudge_y = 0.2, show.legend= FALSE, 
+                              nudge_y = 0.3, show.legend= FALSE, 
                               size = 3) + 
   labs(x = "Average annual taxable income ('000)", y = element_blank(), 
        title = "Weighed average annual taxable income, by gender", 
        subtitle = "Weighted by number of individuals in occupation",
-       caption = "Data labels rescale weighted income as percentage of weighted average male income\n Taxation Statistics 2013-14, source: data.gov.au") + 
+       caption = "Data labels rescale weighted income as percentage of weighted average male income.\n Taxation Statistics 2013-14, source: data.gov.au") + 
   theme(plot.title = element_text(hjust = 1), 
         plot.subtitle = element_text(hjust = 1), 
         legend.position = c(.8,.8), 
