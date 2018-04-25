@@ -108,7 +108,7 @@ ggplot(data = week4shape, aes(gender_rank.Female, gender_rank.Male,
        y = 'Job rank by average taxable income, male', 
        caption = "Taxation Statistics 2013-14, source: data.gov.au") + 
   theme_minimal() + 
-  theme(plot.caption = element_text(hjust = 7.3, color = 'grey38')) + 
+  theme(plot.caption = element_text(hjust =1, color = 'grey38')) + 
   scale_color_continuous(name = "Difference in average income ('000)", 
                           labels = comma, high = "#132B43", low = "#56B1F7")
 ```
@@ -284,8 +284,8 @@ tax3a %>%
   theme_minimal() + geom_text(aes(label = paste0(round(prop,1),'%')), 
                               nudge_y = 0.3, show.legend= FALSE, 
                               size = 3) + 
-  labs(x = "Average annual taxable income ('000)", y = element_blank(), 
-       title = "Weighed average annual taxable income, by gender", 
+  labs(x = "Weighted average annual taxable income ('000)", y = element_blank(), 
+       title = "Average annual taxable income, by gender", 
        subtitle = "Weighted by number of individuals in occupation",
        caption = "Data labels rescale weighted income as percentage of weighted average male income.\n Taxation Statistics 2013-14, source: data.gov.au") + 
   theme(plot.title = element_text(hjust = 1), 
