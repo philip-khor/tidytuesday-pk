@@ -106,9 +106,9 @@ ggplot(data = week4shape, aes(gender_rank.Female, gender_rank.Male,
        subtitle = 'Gender differences in average taxable income is highest among the top-paying jobs for men and women', 
        x = 'Job rank by average taxable income, female', 
        y = 'Job rank by average taxable income, male', 
-       caption = "Taxation Statistics 2013-14, source: data.gov.au") + 
+       caption = "\nTaxation Statistics 2013-14, source: data.gov.au") + 
   theme_minimal() + 
-  theme(plot.caption = element_text(hjust =1, color = 'grey38')) + 
+  theme(plot.caption = element_text(hjust =0, color = 'grey38')) + 
   scale_color_continuous(name = "Difference in average income ('000)", 
                           labels = comma, high = "#132B43", low = "#56B1F7")
 ```
