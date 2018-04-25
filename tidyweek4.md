@@ -119,7 +119,7 @@ ggplot(data = week4shape, aes(gender_rank.Female, gender_rank.Male,
 
 * Plot female income as percentage of male income against raw income differential. 
 
-* Does the proportion of female workers matter? [@WireMonkey](https://twitter.com/WireMonkey/status/988856291480276993?s=19)
+* Does the proportion of female workers matter? Additional dimension inspired by [@WireMonkey](https://twitter.com/WireMonkey/status/988856291480276993?s=19)
 
 
 
