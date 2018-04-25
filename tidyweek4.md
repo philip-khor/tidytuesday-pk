@@ -74,7 +74,7 @@ week4 %>%
        x = "Average taxable income (log-scaled)", y = 'Density', 
        caption = "Taxation Statistics 2013-14, source: data.gov.au") + 
   scale_x_log10(labels = comma, 
-                breaks = c(25000,50000,100000, 150000)) + 
+                breaks = c(25000,50000,100000, 200000)) + 
   theme_minimal() + 
   theme(plot.caption = element_text(hjust = 1, color = 'grey38'), 
         legend.position = c(.9,.5), 
