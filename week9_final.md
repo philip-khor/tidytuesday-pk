@@ -74,7 +74,7 @@ gglist2 <- list(scale_y_continuous(breaks = 0:5*10,
 
 characters %>% 
   # create logical T if female, F if not 
-  mutate(female = .$sex == 'Female Characters') %>%  
+  mutate(female = sex == 'Female Characters') %>%  
   # obtain no. of females, total characters by publisher-year 
   group_by(publisher, year) %>% 
   summarise(females = sum(female, na.rm = T), nchars = n()) %>%
@@ -104,7 +104,7 @@ characters %>%
 ```r
 # plot 3 
 characters %>% 
-  mutate(female = .$sex == 'Female Characters')%>%
+  mutate(female = sex == 'Female Characters')%>%
   # calculate sex ratio of newly introduced characters
   group_by(year, publisher) %>% 
   summarise(sexratio = sum(female, na.rm = T)/n()) %>%
