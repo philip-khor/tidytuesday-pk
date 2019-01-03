@@ -1,16 +1,18 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output: 
+  github_document:
+    toc: true
+  html_document: 
+    toc: true
+    keep_md: true
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+# Load the data
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+Generate a time series of counts of tweets 
 
-```{r}
-
-```
-```{r, cache=TRUE}
+```{r, setup}
 library(lubridate)
 library(tsibble)
 library(forecast)
@@ -20,7 +22,14 @@ library(rlang)
 library(magrittr)
 library(glue)
 library(hrbrthemes)
+library(here)
+```
 
+# Create a time series of counts of tweets per day 
+
+- Check for gaps using `tsibble`
+
+```{r, data, cache=TRUE}
 load_data <- function(x){
   glue("https://github.com/rfordatascience/tidytuesday/raw/master/data/2019/2019-01-01/{x}_tweets.rds") %>% 
   url(description = .) %>% 
@@ -30,16 +39,23 @@ load_data <- function(x){
                                     unit = "week")))
 }
 
-data <- map(c(TidyTuesday = "tidytuesday", rstats = "rstats"), 
+ls_data <- map(c(TidyTuesday = "tidytuesday", 
+              rstats = "rstats"), 
             load_data)
 
+str(ls_data, max.level = 2)
+```
+
+# Check for gaps in the time series 
+
+```{r}
 check_for_gaps <- . %>% 
   pluck(2) %>% 
   mutate(date = as_date(date)) %>% 
   as_tsibble(regular = TRUE) %>% 
   count_gaps(.full = TRUE)
 
-map_df(data, check_for_gaps, .id = "hashtag")
+map_df(ls_data, check_for_gaps, .id = "hashtag")
 ```
 
 ```{r}
@@ -51,12 +67,12 @@ filling_gaps <- function(x){
     fill_gaps(n = 0L) 
   return(x)
 }
-map(data, filling_gaps) %>% str(max.level = 2)
+data <- map(ls_data, filling_gaps) 
 ```
+
 ```{r}
 
 # start at first day of week
-
 polar_plot <- function(.x, .y) {
   .x$ts %>% 
     pull(n) %>% 
@@ -67,14 +83,20 @@ polar_plot <- function(.x, .y) {
     labs(color = "week")
 }
 
-map2(data, names(data), polar_plot) %>% 
+map2(ls_data, names(ls_data), polar_plot) %>% 
   plot_grid(plotlist = .)
 ```
 
-
+# Count of tweets over time 
 ```{r}
-bind_rows(data$TidyTuesday$ts, data$rstats$ts, .id = "hashtag") %>% 
-  mutate(hashtag = recode(hashtag, `1` = "TidyTuesday", `2` = "rstats")) %>% 
+str(ls_data, max.level = 2)
+```
+
+
+```{r, countline}
+bind_rows(ls_data$TidyTuesday[[2]], ls_data$rstats[[2]], .id = "hashtag") %>% 
+  mutate(hashtag = case_when(hashtag == 1 ~ "TidyTuesday", 
+                             TRUE ~ "rstats")) %>% 
   ggplot(aes(x = date, y = n, color = hashtag)) + geom_line() + theme_minimal()
 ```
 
@@ -87,7 +109,7 @@ To filter for user submissions, I use the following (rather crude) rules:
  - People posting from the [Buffer](https://buffer.com/) app are filtered out. Buffer is a social media management app - it's unlikely that participants are posting from Buffer. 
 
 ```{r}
-communities <- c("RLadiesELansing", "PodsProgram", "WeAreRLadies", "RLadiesLondon", "R4DScommunity" #,  "thomas_mock",
+communities <- c("RLadiesELansing", "PodsProgram", "WeAreRLadies", "RLadiesLondon", "R4DScommunity",  "thomas_mock"
                  )
 others <- c("AirdrieExchange", "tidyyourworld", "SavvySpaceSolut", "emfriesen", "stevie_t13", "EjayOnline",
             "worldcattitude", "SummitAppliance", "BellaBooDC", "RouteMediaUK", "London__Digital", 
@@ -100,7 +122,7 @@ others <- c("AirdrieExchange", "tidyyourworld", "SavvySpaceSolut", "emfriesen", 
             "naturalstclean", "Nightingale_NTA", "PurfectSoluxion", "SimsLifeBlog", "ThomsonPlumbing")
 screen_filter <- c(communities, others)
 
-tidied <- data$TidyTuesday[[1]] %>% 
+tidied <- ls_data$TidyTuesday[[1]] %>% 
   unnest(media_type) %>% 
   mutate(week = ymd("2018-04-02") %--% as_date(created_at)/dweeks(1), 
          source_filter = !((screen_name %in% screen_filter)  | (source == "Buffer")),
@@ -118,6 +140,7 @@ tidied <- data$TidyTuesday[[1]] %>%
 # Compiling a leaderboard 
 
 From this we can compile a leaderboard on who makes the most #TidyTuesday submissions. 
+
 ```{r}
 leaderboard <- tidied %>% 
   filter(source_filter & reply_filter & photos_only) %>% 
@@ -135,13 +158,17 @@ leaderboard <- tidied %>%
 head(leaderboard, 10) %>% 
   select(screen_name, sum) %>% 
   knitr::kable()
+```
 
-write_csv()
+## Save and visualise the leaderboard 
+
+```{r}
+write_csv(leaderboard, path = here::here("2019", "w1_2019", "data", "tt_leaderboard.csv"))
+
 ggplot(leaderboard, aes(x = sum)) + 
   geom_histogram() + 
   labs(title = "Distribution of participants' #TidyTuesday submissions", 
        subtitle = "Approximate") + theme_ipsum()
-
 ```
 
 ```{r}
@@ -159,47 +186,38 @@ tidied_ts %>%
   fill_gaps(n = 0L) %>% 
   pull(n) %>% 
   ts(frequency = 7, start = c(1, 3)) %>% 
-  ggseasonplot(main = "#TidyTuesday submissions", 
+  ggseasonplot(main = "#TidyTuesday 'submissions'", 
                continuous = TRUE, polar = TRUE) + 
   labs(color = "week", 
-       subtitle = "Most Twitter submissions occur on Tuesday and Wednesday") + theme_minimal()
+       subtitle = "Most Twitter #TidyTuesday 'submissions' occur on Tue and Wed", 
+       caption = "Submissions defined as tweets containing photos that are not replies to other tweets. \
+       Tweets posted by non-R users, via the Buffer app and R community accounts excluded.") +
+  theme_minimal()
 ```
 
+This contrasts with the conclusion we made at the start. If we had not filtered for submissions, we may have been misled into thiking that most people post their #TidyTuesday work at the end of the week, and even on Mondays. 
+
 ```{r}
-all_tt <- data$TidyTuesday[[1]] %>% 
-  group_by(hour = hour(created_at)) %>%
-  summarise(n = n()) 
+count_hourly_tweets <- . %>% 
+  mutate(date = round_date(created_at, unit = "hour")) %>% 
+  group_by(date) %>% 
+  summarise(n = n()) %>% 
+  as_tsibble(index = date, regular = TRUE) %>% 
+  fill_gaps(n = 0L) %>% 
+  index_by(hour = hour(date)) %>%
+  summarise(n = sum(n))
+
+all_tt <- tidied %>% count_hourly_tweets()
 
 filtered_tt <- tidied %>% 
-  filter(source_filter & reply_filter & photos_only) %>% 
-  group_by(hour = hour(created_at)) %>%
-  summarise(n = n()) 
+  filter(source_filter & reply_filter & photos_only) %>%
+  count_hourly_tweets()
 
 ggplot() + geom_line(all_tt, mapping = aes(x = hour, y = n), color = 'grey') + 
-  geom_line(filtered_tt, mapping = aes(x = hour, y = n), color = 'blue')
+  geom_line(filtered_tt, mapping = aes(x = hour, y = n), color = 'blue') + 
+  labs(title = "Most of the filtered tweets are posted between 11am and 9pm", 
+       subtitle = "'Submissions' are more evenly distributed through the day") + 
+  theme_ipsum()
 
 ```
-```{r}
-tidied %>% 
-  count(to_filter)
-  group_by(to_filter) %>% 
-  sample_frac(.1) %>% 
-  select(text, to_filter, screen_name)
 
-tidied_nested_df <- tidied %>% 
-  group_by(screen_name) %>% 
-  nest()
- 
-tidied_counts <- tidied %>%  
-  count(screen_name) %>% 
-  arrange(desc(n))
-
-
-  count(screen_name, week) %>% 
-  arrange(desc(n))
-  
-  group_by(screen_name) %>% 
-  nest()
-
-tidied[[3, "data"]]
-```
