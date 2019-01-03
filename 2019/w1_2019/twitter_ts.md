@@ -7,134 +7,27 @@ Generate a time series of counts of tweets
 
 ``` r
 library(lubridate)
-```
-
-    ## 
-    ## Attaching package: 'lubridate'
-
-    ## The following object is masked from 'package:base':
-    ## 
-    ##     date
-
-``` r
 library(tsibble)
-```
-
-    ## 
-    ## Attaching package: 'tsibble'
-
-    ## The following objects are masked from 'package:lubridate':
-    ## 
-    ##     interval, new_interval
-
-    ## The following object is masked from 'package:stats':
-    ## 
-    ##     filter
-
-``` r
 library(forecast)
 library(tidyverse)
-```
-
-    ## ── Attaching packages ────────────────────────────────────────────────────────────── tidyverse 1.2.1 ──
-
-    ## ✔ ggplot2 3.1.0     ✔ purrr   0.2.5
-    ## ✔ tibble  1.4.2     ✔ dplyr   0.7.8
-    ## ✔ tidyr   0.8.2     ✔ stringr 1.3.1
-    ## ✔ readr   1.3.1     ✔ forcats 0.3.0
-
-    ## ── Conflicts ───────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
-    ## ✖ lubridate::as.difftime() masks base::as.difftime()
-    ## ✖ lubridate::date()        masks base::date()
-    ## ✖ dplyr::filter()          masks tsibble::filter(), stats::filter()
-    ## ✖ dplyr::id()              masks tsibble::id()
-    ## ✖ lubridate::intersect()   masks base::intersect()
-    ## ✖ tsibble::interval()      masks lubridate::interval()
-    ## ✖ dplyr::lag()             masks stats::lag()
-    ## ✖ tsibble::new_interval()  masks lubridate::new_interval()
-    ## ✖ lubridate::setdiff()     masks base::setdiff()
-    ## ✖ lubridate::union()       masks base::union()
-
-``` r
 library(cowplot)
-```
-
-    ## 
-    ## Attaching package: 'cowplot'
-
-    ## The following object is masked from 'package:ggplot2':
-    ## 
-    ##     ggsave
-
-``` r
 library(rlang)
-```
-
-    ## 
-    ## Attaching package: 'rlang'
-
-    ## The following objects are masked from 'package:purrr':
-    ## 
-    ##     %@%, %||%, as_function, flatten, flatten_chr, flatten_dbl,
-    ##     flatten_int, flatten_lgl, invoke, list_along, modify, prepend,
-    ##     rep_along, splice
-
-``` r
 library(magrittr)
-```
-
-    ## 
-    ## Attaching package: 'magrittr'
-
-    ## The following object is masked from 'package:rlang':
-    ## 
-    ##     set_names
-
-    ## The following object is masked from 'package:purrr':
-    ## 
-    ##     set_names
-
-    ## The following object is masked from 'package:tidyr':
-    ## 
-    ##     extract
-
-``` r
 library(glue)
-```
-
-    ## 
-    ## Attaching package: 'glue'
-
-    ## The following object is masked from 'package:dplyr':
-    ## 
-    ##     collapse
-
-``` r
 library(hrbrthemes)
-```
-
-    ## NOTE: Either Arial Narrow or Roboto Condensed fonts are *required* to use these themes.
-
-    ##       Please use hrbrthemes::import_roboto_condensed() to install Roboto Condensed and
-
-    ##       if Arial Narrow is not on your system, please see http://bit.ly/arialnarrow
-
-``` r
 library(here)
 ```
 
-    ## here() starts at /Users/philip/tidytuesday-pk
-
-    ## 
-    ## Attaching package: 'here'
-
-    ## The following object is masked from 'package:lubridate':
-    ## 
-    ##     here
-
 # Create a time series of counts of tweets per day
 
-  - Check for gaps using `tsibble`
+Load the data as a list of lists:
+
+  - one element for \#TidyTuesday and \#rstats
+  - within each, three elements:
+      - the data frame of tweets from `rtweet`, loaded from `readRDS()`
+      - a tibble containing the counts of tweets on each date
+      - a third element indicating the start date (for creating `ts`
+        object)
 
 <!-- end list -->
 
@@ -167,6 +60,11 @@ str(ls_data, max.level = 2)
 
 # Check for gaps in the time series
 
+There could be dates with no tweets. Use the `tsibble` package to check
+for (`count_gaps`) and fill gaps (`fill_gaps`) in the time series.
+Naturally, if the value is not available, the number of counts for a day
+is 0.
+
 ``` r
 check_for_gaps <- . %>% 
   pluck(2) %>% 
@@ -174,7 +72,8 @@ check_for_gaps <- . %>%
   as_tsibble(regular = TRUE) %>% 
   count_gaps(.full = TRUE)
 
-map_df(ls_data, check_for_gaps, .id = "hashtag")
+map_df(ls_data, check_for_gaps, .id = "hashtag") %>% 
+  knitr::kable()
 ```
 
     ## Column `date` is the index.
@@ -185,20 +84,38 @@ map_df(ls_data, check_for_gaps, .id = "hashtag")
 
     ## Column `date` is the index.
 
-    ## # A tibble: 30 x 4
-    ##    hashtag     .from      .to           .n
-    ##    <chr>       <date>     <date>     <int>
-    ##  1 TidyTuesday 2018-05-06 2018-05-06     1
-    ##  2 TidyTuesday 2018-05-20 2018-05-20     1
-    ##  3 TidyTuesday 2018-06-17 2018-06-17     1
-    ##  4 TidyTuesday 2018-07-08 2018-07-08     1
-    ##  5 TidyTuesday 2018-07-27 2018-07-29     3
-    ##  6 TidyTuesday 2018-08-18 2018-08-18     1
-    ##  7 TidyTuesday 2018-08-26 2018-08-27     2
-    ##  8 TidyTuesday 2018-09-01 2018-09-01     1
-    ##  9 TidyTuesday 2018-09-08 2018-09-08     1
-    ## 10 TidyTuesday 2018-09-29 2018-09-29     1
-    ## # ... with 20 more rows
+| hashtag     | .from      | .to        |  .n |
+| :---------- | :--------- | :--------- | --: |
+| TidyTuesday | 2018-05-06 | 2018-05-06 |   1 |
+| TidyTuesday | 2018-05-20 | 2018-05-20 |   1 |
+| TidyTuesday | 2018-06-17 | 2018-06-17 |   1 |
+| TidyTuesday | 2018-07-08 | 2018-07-08 |   1 |
+| TidyTuesday | 2018-07-27 | 2018-07-29 |   3 |
+| TidyTuesday | 2018-08-18 | 2018-08-18 |   1 |
+| TidyTuesday | 2018-08-26 | 2018-08-27 |   2 |
+| TidyTuesday | 2018-09-01 | 2018-09-01 |   1 |
+| TidyTuesday | 2018-09-08 | 2018-09-08 |   1 |
+| TidyTuesday | 2018-09-29 | 2018-09-29 |   1 |
+| TidyTuesday | 2018-10-08 | 2018-10-08 |   1 |
+| TidyTuesday | 2018-10-14 | 2018-10-14 |   1 |
+| TidyTuesday | 2018-10-21 | 2018-10-22 |   2 |
+| TidyTuesday | 2018-11-02 | 2018-11-02 |   1 |
+| TidyTuesday | 2018-11-04 | 2018-11-04 |   1 |
+| TidyTuesday | 2018-11-26 | 2018-11-26 |   1 |
+| TidyTuesday | 2018-12-09 | 2018-12-10 |   2 |
+| rstats      | 2008-09-09 | 2009-04-03 | 207 |
+| rstats      | 2009-04-07 | 2009-04-07 |   1 |
+| rstats      | 2009-04-11 | 2009-04-20 |  10 |
+| rstats      | 2009-04-27 | 2009-04-28 |   2 |
+| rstats      | 2009-04-30 | 2009-05-05 |   6 |
+| rstats      | 2009-05-08 | 2009-05-08 |   1 |
+| rstats      | 2009-05-10 | 2009-05-11 |   2 |
+| rstats      | 2009-05-14 | 2009-05-14 |   1 |
+| rstats      | 2009-05-16 | 2009-05-20 |   5 |
+| rstats      | 2009-05-22 | 2009-05-22 |   1 |
+| rstats      | 2009-05-24 | 2009-05-26 |   3 |
+| rstats      | 2009-06-28 | 2009-06-28 |   1 |
+| rstats      | 2009-11-28 | 2009-11-28 |   1 |
 
 ``` r
 # fill gaps with 0s
@@ -231,7 +148,7 @@ map2(ls_data, names(ls_data), polar_plot) %>%
   plot_grid(plotlist = .)
 ```
 
-![](twitter_ts_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](twitter_ts_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 # Count of tweets over time
 
@@ -249,6 +166,10 @@ str(ls_data, max.level = 2)
     ##   ..$ ts        :Classes 'tbl_df', 'tbl' and 'data.frame':   3515 obs. of  2 variables:
     ##   ..$ start_date: num 36
 
+After filling in the gaps in the data frames with 0s, we can visualise
+how the number of tweets evolves for each of these hashtags over
+time:
+
 ``` r
 bind_rows(ls_data$TidyTuesday[[2]], ls_data$rstats[[2]], .id = "hashtag") %>% 
   mutate(hashtag = case_when(hashtag == 1 ~ "TidyTuesday", 
@@ -258,49 +179,57 @@ bind_rows(ls_data$TidyTuesday[[2]], ls_data$rstats[[2]], .id = "hashtag") %>%
 
 ![](twitter_ts_files/figure-gfm/countline-1.png)<!-- -->
 
-# Manual random check on suspicious looking screen names
+# Manual (not-really-)random check on suspicious looking screen names
 
 Some are cleaning services, city councils/community volunteers, social
 media influencers sharing tweets on how to be tidy, and community R
 accounts that are unlikely to amount to user submissions. I manually
-look up some screen names to be sure.
+look up some screen names to be sure, although I haven’t had an
+exhaustive check. This leaves me with around 255 \#TidyTuesday
+participants in this dataset.
 
 To filter for user submissions, I use the following (rather crude)
 rules:
 
   - People posting from the [Buffer](https://buffer.com/) app are
     filtered out. Buffer is a social media management app - it’s
-    unlikely that participants are posting from
-Buffer.
+    unlikely that participants are posting from Buffer.
+  - Filtering out replies: most participants properly thread their
+    submissions so it’s unlikely we get a submission that’s a reply to
+    another tweet. We want to count each participant once anyway, so …
+  - Filtering out posts that don’t contain photos: \#TidyTuesday focuses
+    on visualisation, so participants will naturally want to highlight
+    the charts they’ve made. Filtering these tweets would (hopefully)
+    remove most tweets discussing the project in favour of **actual**
+    submissions.
 
 <!-- end list -->
 
 ``` r
 communities <- c("RLadiesELansing", "PodsProgram", "WeAreRLadies", "RLadiesLondon", "R4DScommunity",  "thomas_mock"
                  )
-others <- c("AirdrieExchange", "tidyyourworld", "SavvySpaceSolut", "emfriesen", "stevie_t13", "EjayOnline",
-            "worldcattitude", "SummitAppliance", "BellaBooDC", "RouteMediaUK", "London__Digital", 
-            "AdoptionsWLove", "_Mindmassage", "_VictoriaPlace", "BonnieC919", "EnglishHomeTeam", "fakrogb", "town_of_pc", 
-            "racinggreenmids", "FitKitchens", "GlowExpressWash", "GlitterOnADime", "HomerHelper", "leafinnovations",
-            "LivingSimplyLR", "BooksForOrphans", "BishopSport", "BroomsInBloom", "CDSChester", "CMwaste2007", 
-            "CountrywithKim", "PMPUtilities", "Sarah_C_Church", "SugarLesswithC", "SportandiAndres",
-            "Shortie_Amazing", "silicasun", "sirfrancishill", "steph4smith", "rubyslifestyle", 
-            "PinkGiraffe_", "RogersUptown", "OrganisedWell", "StanleyWingHK", "RGTB", "OrganisingNinja", 
-            "naturalstclean", "Nightingale_NTA", "PurfectSoluxion", "SimsLifeBlog", "ThomsonPlumbing")
+others <- c("AirdrieExchange", "tidyyourworld", "SavvySpaceSolut", "emfriesen",
+            "stevie_t13", "EjayOnline", "worldcattitude", "SummitAppliance",
+            "BellaBooDC", "RouteMediaUK", "London__Digital", "AdoptionsWLove",
+            "_Mindmassage", "_VictoriaPlace", "BonnieC919", "EnglishHomeTeam",
+            "fakrogb", "town_of_pc", "racinggreenmids", "FitKitchens",
+            "GlowExpressWash", "GlitterOnADime", "HomerHelper", "leafinnovations",
+            "LivingSimplyLR", "BooksForOrphans", "BishopSport", "BroomsInBloom",
+            "CDSChester", "CMwaste2007", "CountrywithKim", "PMPUtilities",
+            "Sarah_C_Church", "SugarLesswithC", "SportandiAndres", 
+            "Shortie_Amazing", "silicasun", "sirfrancishill", "steph4smith",
+            "rubyslifestyle","PinkGiraffe_", "RogersUptown", "OrganisedWell",
+            "StanleyWingHK", "RGTB", "OrganisingNinja","naturalstclean",
+            "Nightingale_NTA", "PurfectSoluxion", "SimsLifeBlog",
+            "ThomsonPlumbing")
+
 screen_filter <- c(communities, others)
 
 tidied <- ls_data$TidyTuesday[[1]] %>% 
   unnest(media_type) %>% 
   mutate(week = ymd("2018-04-02") %--% as_date(created_at)/dweeks(1), 
          source_filter = !((screen_name %in% screen_filter)  | (source == "Buffer")),
-         
-         # does help that most participants properly thread their submissions 
-         # so it's unlikely we get a submission that's a reply to another tweet
-         # we want to count each participant once anyway, so ...
          reply_filter = is.na(reply_to_screen_name),
-         
-         # this would (hopefully) remove most tweets discussing the project
-         # in favour of **actual** submissions
          photos_only = media_type %in% "photo") 
 ```
 
@@ -344,7 +273,8 @@ head(leaderboard, 10) %>%
 ## Save and visualise the leaderboard
 
 ``` r
-write_csv(leaderboard, path = here::here("2019", "w1_2019", "data", "tt_leaderboard.csv"))
+write_csv(leaderboard %>% select(screen_name, sum),
+          path = here::here("2019", "w1_2019", "data", "tt_leaderboard.csv"))
 
 ggplot(leaderboard, aes(x = sum)) + 
   geom_histogram() + 
@@ -354,7 +284,7 @@ ggplot(leaderboard, aes(x = sum)) +
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](twitter_ts_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](twitter_ts_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 tidied_ts <- tidied %>% 
@@ -365,23 +295,54 @@ tidied_ts <- tidied %>%
   as_tsibble(key = id(id), index = date, regular = TRUE) 
 
 tidied_ts %>% 
-  count_gaps()
+  count_gaps() %>% 
+  knitr::kable()
 ```
 
-    ## # A tibble: 42 x 4
-    ##    id    .from      .to           .n
-    ##    <chr> <date>     <date>     <int>
-    ##  1 id    2018-04-06 2018-04-06     1
-    ##  2 id    2018-04-09 2018-04-09     1
-    ##  3 id    2018-04-13 2018-04-13     1
-    ##  4 id    2018-04-15 2018-04-15     1
-    ##  5 id    2018-04-23 2018-04-23     1
-    ##  6 id    2018-04-28 2018-04-28     1
-    ##  7 id    2018-05-05 2018-05-06     2
-    ##  8 id    2018-05-13 2018-05-13     1
-    ##  9 id    2018-05-20 2018-05-20     1
-    ## 10 id    2018-05-26 2018-05-26     1
-    ## # ... with 32 more rows
+| id | .from      | .to        | .n |
+| :- | :--------- | :--------- | -: |
+| id | 2018-04-06 | 2018-04-06 |  1 |
+| id | 2018-04-09 | 2018-04-09 |  1 |
+| id | 2018-04-13 | 2018-04-13 |  1 |
+| id | 2018-04-15 | 2018-04-15 |  1 |
+| id | 2018-04-23 | 2018-04-23 |  1 |
+| id | 2018-04-28 | 2018-04-28 |  1 |
+| id | 2018-05-05 | 2018-05-06 |  2 |
+| id | 2018-05-13 | 2018-05-13 |  1 |
+| id | 2018-05-20 | 2018-05-20 |  1 |
+| id | 2018-05-26 | 2018-05-26 |  1 |
+| id | 2018-05-28 | 2018-05-28 |  1 |
+| id | 2018-06-04 | 2018-06-04 |  1 |
+| id | 2018-06-09 | 2018-06-09 |  1 |
+| id | 2018-06-17 | 2018-06-17 |  1 |
+| id | 2018-07-01 | 2018-07-01 |  1 |
+| id | 2018-07-08 | 2018-07-08 |  1 |
+| id | 2018-07-14 | 2018-07-14 |  1 |
+| id | 2018-07-17 | 2018-07-17 |  1 |
+| id | 2018-07-21 | 2018-07-30 | 10 |
+| id | 2018-08-11 | 2018-08-11 |  1 |
+| id | 2018-08-18 | 2018-08-19 |  2 |
+| id | 2018-08-26 | 2018-08-27 |  2 |
+| id | 2018-08-31 | 2018-09-01 |  2 |
+| id | 2018-09-04 | 2018-09-04 |  1 |
+| id | 2018-09-08 | 2018-09-08 |  1 |
+| id | 2018-09-17 | 2018-09-17 |  1 |
+| id | 2018-09-22 | 2018-09-22 |  1 |
+| id | 2018-09-25 | 2018-09-25 |  1 |
+| id | 2018-09-29 | 2018-09-29 |  1 |
+| id | 2018-10-02 | 2018-10-02 |  1 |
+| id | 2018-10-07 | 2018-10-09 |  3 |
+| id | 2018-10-13 | 2018-10-15 |  3 |
+| id | 2018-10-21 | 2018-10-22 |  2 |
+| id | 2018-11-02 | 2018-11-02 |  1 |
+| id | 2018-11-04 | 2018-11-04 |  1 |
+| id | 2018-11-06 | 2018-11-06 |  1 |
+| id | 2018-11-19 | 2018-11-19 |  1 |
+| id | 2018-11-24 | 2018-11-24 |  1 |
+| id | 2018-11-26 | 2018-11-27 |  2 |
+| id | 2018-12-01 | 2018-12-01 |  1 |
+| id | 2018-12-03 | 2018-12-03 |  1 |
+| id | 2018-12-09 | 2018-12-10 |  2 |
 
 ``` r
 tidied_ts %>% 
@@ -397,7 +358,7 @@ tidied_ts %>%
   theme_minimal()
 ```
 
-![](twitter_ts_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](twitter_ts_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 This contrasts with the conclusion we made at the start. If we had not
 filtered for submissions, we may have been misled into thiking that most
@@ -427,4 +388,4 @@ ggplot() + geom_line(all_tt, mapping = aes(x = hour, y = n), color = 'grey') +
   theme_ipsum()
 ```
 
-![](twitter_ts_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](twitter_ts_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
