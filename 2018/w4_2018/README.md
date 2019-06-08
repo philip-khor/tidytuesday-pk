@@ -161,9 +161,11 @@ tax %>% head(3) %>% knitr::kable(format = 'html')
   <tr>
    <th style="text-align:left;"> Occupation1 </th>
    <th style="text-align:left;"> Gender </th>
-   <th style="text-align:right;"> Individuals
+   <th style="text-align:right;"> Individuals
+
 no. </th>
-   <th style="text-align:right;"> Average taxable income
+   <th style="text-align:right;"> Average taxable income
+
 $ </th>
   </tr>
  </thead>
