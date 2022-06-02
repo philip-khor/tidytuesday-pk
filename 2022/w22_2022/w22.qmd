@@ -1,0 +1,137 @@
+---
+title: "2022 Axios-Harris Poll"
+format: gfm
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+tuesdata <- tidytuesdayR::tt_load(2022, week = 22)
+
+poll <- tuesdata$poll
+```
+
+```{r}
+poll 
+
+poll |> 
+  distinct(company, industry) |> 
+  count(company) |> 
+  count(n)
+
+
+poll |> 
+  distinct(company, change) |> 
+  count(change)
+```
+
+```{r}
+#| label: rank-change
+
+poll |> 
+  distinct(company, `2022_rank`, change) |> 
+  mutate(
+    change = ifelse(is.na(change), 0, change),
+    col = ifelse(change > 0, 0, -1), 
+    top_cos = ifelse(change > 25 | change < -25,
+                     stringr::str_wrap(company, width = 10),
+                     "")
+  ) |> 
+  ggplot(aes(x = `2022_rank`, y = change, fill = factor(col))) + 
+  geom_col() + 
+  scale_fill_discrete(type = c(`-1` = "orange", `0` = "grey")) + 
+  scale_colour_discrete(type = c(`-1` = "orange", `0` = "grey")) + 
+  geom_text(
+    aes(
+      label = top_cos,
+      x = `2022_rank` + .7,
+      colour = factor(col),
+      y = ifelse(change > 0, change, change + 4)),
+    position = position_dodge(width = 3),
+    hjust = 0, 
+    vjust = 1, 
+    # colour = "grey50", 
+    size = 3.5, 
+    lineheight = .9
+  ) +
+  guides(fill = "none", colour = "none") + 
+  theme_minimal() + 
+  theme(axis.text.x = element_blank()) + 
+  labs(
+    x = "Rank in 2022 (descending)", 
+    y = "",
+    title = "Most visible brands in America",
+    subtitle = "Change in rank from 2021", 
+    caption = "Source: 2022 Axios-Harris Poll"
+  )
+```
+
+```{r}
+poll |> 
+  distinct(company, industry, `2022_rq`, change) |> 
+  # filter(year == 2022) |> 
+  group_by(industry) |> 
+  summarize(median(`2022_rq`, na.rm = TRUE))
+```
+
+```{r}
+#| label: rank-change-industry-time
+
+poll |> 
+  # select(-starts_with("2022")) |> 
+  mutate(industry = case_when(
+    industry == "Insurance" ~ "Financial Services",
+    industry %in% c("Pharma", "Healthcare") ~ "Pharma/Healthcare",
+    industry == "Groceries" ~ "Retail",
+    industry == "Food Delivery" ~ "Tech",
+    industry == "Energy" ~ "O&G",
+    TRUE ~ industry
+  )) |> 
+  filter(!industry %in% c("Airline", "Ecommerce", "Other")) -> poll_long_clean
+poll_long_clean |> 
+  group_by(industry) |> 
+  summarize(rq = median(`2022_rq`)) %>% 
+  arrange(desc(rq))
+
+poll_long_clean |> 
+  mutate(industry = forcats::fct_reorder(industry, `2022_rq`, na.rm = TRUE, .desc = TRUE)) |> 
+  ggplot(aes(group = company, x = year, y = rq, colour = case_when(
+    `2022_rq` >= 65 ~ "good", 
+    `2022_rq` <= 54 ~ "poor", 
+    TRUE ~ "fair"
+  ))) + 
+  geom_line() + 
+  scale_colour_discrete(type = c(good = "#21468B", poor = "#FF4F00", fair = "grey")) +
+  facet_wrap(vars(industry)) + 
+  guides(color = "none") + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(size = 8)) + 
+  scale_x_continuous(labels = function(x) paste0("'", x - 2000)) + 
+  labs(title = "Automotive, industrial and logistics companies are most highly regarded",
+       subtitle = "USA company rankings over time, by industry",
+       caption = "Industries listed in descending order of 2022 median RQ score.", 
+       y = "Axios-Harris RQ score", x= "")
+
+```
+
+```{r}
+#| label: rank-change-dot-plot
+
+poll |> 
+  filter(year == 2021) |> 
+  ggplot(aes(x = rq, y = `2022_rq`)) + geom_point() + geom_text(aes(label = company))
+
+```
+
+```{r}
+#| label: rq-vs-geom-mean
+
+tuesdata$reputation |> 
+  group_by(company) |> 
+  summarize(geom_score = exp(mean(log(score))))  |> 
+  arrange(desc(geom_score)) |>  
+  left_join(poll |> filter(year == 2021), by = "company") |>
+  ggplot(aes(x = geom_score, y = rq)) + geom_point() + geom_text(aes(label = company))
+
+```
