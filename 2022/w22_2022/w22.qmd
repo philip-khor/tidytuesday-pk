@@ -1,6 +1,7 @@
 ---
 title: "2022 Axios-Harris Poll"
 format: gfm
+output-file: README.md
 ---
 
 ```{r}
