@@ -3,38 +3,10 @@
 
 ``` r
 library(dplyr)
-```
-
-
-    Attaching package: 'dplyr'
-
-    The following objects are masked from 'package:stats':
-
-        filter, lag
-
-    The following objects are masked from 'package:base':
-
-        intersect, setdiff, setequal, union
-
-``` r
 library(ggplot2)
 
 tuesdata <- tidytuesdayR::tt_load(2022, week = 22)
-```
 
-    --- Compiling #TidyTuesday Information for 2022-05-31 ----
-
-    --- There are 2 files available ---
-
-    --- Starting Download ---
-
-
-        Downloading file 1 of 2: `reputation.csv`
-        Downloading file 2 of 2: `poll.csv`
-
-    --- Download complete ---
-
-``` r
 poll <- tuesdata$poll
 ```
 

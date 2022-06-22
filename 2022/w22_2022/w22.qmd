@@ -5,6 +5,7 @@ output-file: README.md
 ---
 
 ```{r}
+#| output: false 
 library(dplyr)
 library(ggplot2)
 
